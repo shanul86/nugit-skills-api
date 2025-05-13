@@ -1,4 +1,6 @@
-export default async function handler(req, res) {
+import axios from "axios";
+
+export default async function(req, res) {
   const { keywords } = req.query;
 
   if (!keywords) {
@@ -7,10 +9,15 @@ export default async function handler(req, res) {
 
   try {
     const url = `https://www.skillscommons.org/rest/items/find?query=${encodeURIComponent(keywords)}&limit=5`;
-    const response = await fetch(url);
-    const data = await response.json();
 
-    const results = data.map(item => ({
+    const response = await axios.get(url, {
+      headers: {
+        "Accept": "application/json",
+        "User-Agent": "nugit-skills-api/1.0"
+      }
+    });
+
+    const results = response.data.map(item => ({
       title: item.name,
       url: item.handle,
       description: item.description || ""
@@ -18,6 +25,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ results });
   } catch (error) {
-    return res.status(500).json({ error: "API fetch failed", details: error.message });
+    return res.status(500).json({
+      error: "Failed to fetch SkillsCommons data",
+      details: error.message
+    });
   }
 }

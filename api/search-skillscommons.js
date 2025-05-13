@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export default async function handler(req, res) {
+export default async function(req, res) {
   const { keywords } = req.query;
   if (!keywords) {
     return res.status(400).json({ error: "Missing keywords" });

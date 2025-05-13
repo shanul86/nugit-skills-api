@@ -1,32 +1,33 @@
+import cheerio from "cheerio";
 import axios from "axios";
 
-export default async function(req, res) {
+export default async function handler(req, res) {
   const { keywords } = req.query;
 
   if (!keywords) {
     return res.status(400).json({ error: "Missing keywords" });
   }
 
-  try {
-    const url = `https://www.skillscommons.org/rest/items/find?query=${encodeURIComponent(keywords)}&limit=5`;
+  const searchUrl = `https://www.skillscommons.org/discover?query=${encodeURIComponent(keywords)}`;
 
-    const response = await axios.get(url, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "nugit-skills-api/1.0"
-      }
+  try {
+    const { data: html } = await axios.get(searchUrl);
+    const $ = cheerio.load(html);
+
+    const results = [];
+
+    $(".artifact-title").each((i, el) => {
+      if (i >= 5) return;
+      const title = $(el).text().trim();
+      const link = "https://www.skillscommons.org" + $(el).find("a").attr("href");
+      const description = $(el).next(".artifact-description").text().trim();
+      results.push({ title, url: link, description });
     });
 
-    const results = response.data.map(item => ({
-      title: item.name,
-      url: item.handle,
-      description: item.description || ""
-    }));
-
-    return res.status(200).json({ results });
+    res.status(200).json({ results });
   } catch (error) {
-    return res.status(500).json({
-      error: "Failed to fetch SkillsCommons data",
+    res.status(500).json({
+      error: "Failed to scrape SkillsCommons search page",
       details: error.message
     });
   }

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing keywords" });
   }
 
-  const searchUrl = `https://library.skillscommons.org/search?query=${encodeURIComponent(keywords)}`;
+  const searchUrl = `https://www.oercommons.org/search?f.keyword=${encodeURIComponent(keywords)}`;
 
   try {
     const { data: html } = await axios.get(searchUrl, {
@@ -18,30 +18,26 @@ export default async function handler(req, res) {
       }
     });
 
-    console.log("Fetched HTML:\n", html.slice(0, 1000));
-
     const $ = cheerio.load(html);
     const results = [];
 
-    $("div.media").each((i, el) => {
-      const anchor = $(el).find("h4.title a");
-      const title = anchor.text().trim();
-      const href = anchor.attr("href");
-      const url = href?.startsWith("http") ? href : "https://library.skillscommons.org" + href;
-      const description = $(el).find("p.description").text().trim();
+    $(".search-result").each((i, el) => {
+      if (i >= 5) return false;
 
-      if (title && href) {
+      const title = $(el).find(".result-title a").text().trim();
+      const url = "https://www.oercommons.org" + $(el).find(".result-title a").attr("href");
+      const description = $(el).find(".discovery-card-description").text().trim();
+
+      if (title && url) {
         results.push({ title, url, description });
       }
-
-      if (results.length >= 5) return false;
     });
 
     return res.status(200).json({ results });
-  } catch (error) {
+  } catch (err) {
     return res.status(500).json({
-      error: "Failed to scrape SkillsCommons",
-      details: error.message
+      error: "Failed to scrape OER Commons",
+      details: err.message
     });
   }
 }

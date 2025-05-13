@@ -1,14 +1,14 @@
-export default async function handler(request, response) {
-  const { keywords } = request.query;
+export default async function handler(req, res) {
+  const { keywords } = req.query;
 
   if (!keywords) {
-    return response.status(400).json({ error: "Missing keywords" });
+    return res.status(400).json({ error: "Missing keywords" });
   }
 
   try {
-    const apiUrl = `https://www.skillscommons.org/rest/items/find?query=${encodeURIComponent(keywords)}&limit=5`;
-    const skillsRes = await fetch(apiUrl);
-    const data = await skillsRes.json();
+    const url = `https://www.skillscommons.org/rest/items/find?query=${encodeURIComponent(keywords)}&limit=5`;
+    const response = await fetch(url);
+    const data = await response.json();
 
     const results = data.map(item => ({
       title: item.name,
@@ -16,11 +16,8 @@ export default async function handler(request, response) {
       description: item.description || ""
     }));
 
-    return response.status(200).json({ results });
+    return res.status(200).json({ results });
   } catch (error) {
-    return response.status(500).json({
-      error: "Failed to fetch data from SkillsCommons",
-      details: error.message
-    });
+    return res.status(500).json({ error: "API fetch failed", details: error.message });
   }
 }

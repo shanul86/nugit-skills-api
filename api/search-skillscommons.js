@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing keywords" });
   }
 
-  const searchUrl = `https://www.skillscommons.org/discover?query=${encodeURIComponent(keywords)}&submit=Go`;
+  const searchUrl = `https://library.skillscommons.org/search?query=${encodeURIComponent(keywords)}`;
 
   try {
     const { data: html } = await axios.get(searchUrl, {
@@ -21,20 +21,19 @@ export default async function handler(req, res) {
     const $ = cheerio.load(html);
     const results = [];
 
-    $(".artifact-title").each((i, el) => {
+    $(".media-body").each((i, el) => {
       if (i >= 5) return;
-      const anchor = $(el).find("a");
-      const title = anchor.text().trim();
-      const url = "https://www.skillscommons.org" + anchor.attr("href");
-      const description = $(el).next(".artifact-description").text().trim();
+      const title = $(el).find(".title a").text().trim();
+      const url = "https://library.skillscommons.org" + $(el).find(".title a").attr("href");
+      const description = $(el).find(".description").text().trim();
       results.push({ title, url, description });
     });
 
     return res.status(200).json({ results });
-  } catch (err) {
+  } catch (error) {
     return res.status(500).json({
-      error: "Failed to scrape SkillsCommons",
-      details: err.message
+      error: "Failed to scrape SkillsCommons library site",
+      details: error.message
     });
   }
 }

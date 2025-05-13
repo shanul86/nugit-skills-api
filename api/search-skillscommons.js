@@ -1,5 +1,5 @@
-import cheerio from "cheerio";
 import axios from "axios";
+import * as cheerio from "cheerio"; // ✅ ESM-compatible import
 
 export default async function handler(req, res) {
   const { keywords } = req.query;

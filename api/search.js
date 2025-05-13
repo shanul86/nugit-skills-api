@@ -18,31 +18,24 @@ export default async function handler(req, res) {
       }
     });
 
+    console.log("Fetched HTML:\n", html.slice(0, 1000));
+
     const $ = cheerio.load(html);
     const results = [];
 
-try {
-  const { data: html } = await axios.get(searchUrl, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
-    }
-  });
+    $("div.media").each((i, el) => {
+      const anchor = $(el).find("h4.title a");
+      const title = anchor.text().trim();
+      const href = anchor.attr("href");
+      const url = href?.startsWith("http") ? href : "https://library.skillscommons.org" + href;
+      const description = $(el).find("p.description").text().trim();
 
-  const $ = cheerio.load(html);
-  const results = [];
+      if (title && href) {
+        results.push({ title, url, description });
+      }
 
-  $("div.media").each((i, el) => {
-    if (i >= 5) return;
-    const title = $(el).find("h4.title a").text().trim();
-    const url = "https://library.skillscommons.org" + $(el).find("h4.title a").attr("href");
-    const description = $(el).find("p.description").text().trim();
-    results.push({ title, url, description });
-  });
-
-  return res.status(200).json({ results });
-}
-
+      if (results.length >= 5) return false;
+    });
 
     return res.status(200).json({ results });
   } catch (error) {

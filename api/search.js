@@ -21,14 +21,28 @@ export default async function handler(req, res) {
     const $ = cheerio.load(html);
     const results = [];
 
-    $(".ds-artifact-item").each((i, el) => {
-      if (i >= 5) return;
-      const anchor = $(el).find("h4 a");
-      const title = anchor.text().trim();
-      const url = "https://library.skillscommons.org" + anchor.attr("href");
-      const description = $(el).find(".artifact-description").text().trim();
-      results.push({ title, url, description });
-    });
+try {
+  const { data: html } = await axios.get(searchUrl, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+    }
+  });
+
+  const $ = cheerio.load(html);
+  const results = [];
+
+  $("div.media").each((i, el) => {
+    if (i >= 5) return;
+    const title = $(el).find("h4.title a").text().trim();
+    const url = "https://library.skillscommons.org" + $(el).find("h4.title a").attr("href");
+    const description = $(el).find("p.description").text().trim();
+    results.push({ title, url, description });
+  });
+
+  return res.status(200).json({ results });
+}
+
 
     return res.status(200).json({ results });
   } catch (error) {

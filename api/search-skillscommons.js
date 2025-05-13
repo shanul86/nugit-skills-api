@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing keywords" });
   }
 
-  const searchUrl = `https://www.skillscommons.org/discover?query=${encodeURIComponent(keywords)}`;
+const searchUrl = `https://www.skillscommons.org/discover?filtertype=subject&query=${encodeURIComponent(keywords)}&rpp=10&sort_by=score&order=desc`;
 
   try {
     const { data: html } = await axios.get(searchUrl);

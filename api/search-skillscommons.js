@@ -1,5 +1,5 @@
 import axios from "axios";
-import * as cheerio from "cheerio"; // ✅ ESM-compatible import
+import * as cheerio from "cheerio";
 
 export default async function handler(req, res) {
   const { keywords } = req.query;
@@ -8,27 +8,33 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing keywords" });
   }
 
-const searchUrl = `https://www.skillscommons.org/discover?filtertype=subject&query=${encodeURIComponent(keywords)}&rpp=10&sort_by=score&order=desc`;
+  const searchUrl = `https://www.skillscommons.org/discover?query=${encodeURIComponent(keywords)}&submit=Go`;
 
   try {
-    const { data: html } = await axios.get(searchUrl);
-    const $ = cheerio.load(html);
+    const { data: html } = await axios.get(searchUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
 
+    const $ = cheerio.load(html);
     const results = [];
 
     $(".artifact-title").each((i, el) => {
       if (i >= 5) return;
-      const title = $(el).text().trim();
-      const link = "https://www.skillscommons.org" + $(el).find("a").attr("href");
+      const anchor = $(el).find("a");
+      const title = anchor.text().trim();
+      const url = "https://www.skillscommons.org" + anchor.attr("href");
       const description = $(el).next(".artifact-description").text().trim();
-      results.push({ title, url: link, description });
+      results.push({ title, url, description });
     });
 
-    res.status(200).json({ results });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to scrape SkillsCommons search page",
-      details: error.message
+    return res.status(200).json({ results });
+  } catch (err) {
+    return res.status(500).json({
+      error: "Failed to scrape SkillsCommons",
+      details: err.message
     });
   }
 }
